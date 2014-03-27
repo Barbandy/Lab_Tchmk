@@ -41,8 +41,8 @@ void WriteFt(char* bin,int* c,long &sizen, char *fname )
 	if(strcmp(bin,"-b")==NULL)
 	flag = "wb";
 	else
-		flag = "wt";
-	printf("записан в файл %s.",fname);
+		flag = "w";
+	printf("Результат записан в файл %s.",fname);
 	FILE *fp = fopen(fname, flag);
 	if(NULL==fp)
 	{
@@ -51,8 +51,8 @@ void WriteFt(char* bin,int* c,long &sizen, char *fname )
 	}
 	for(int i=sizen; i>0; i--)
 	{
-		// fwrite(&c[i], sizeof(int), 1, fp);
-		fprintf(fp,"%d",c[i]); 
+		 //fwrite(&c[i], sizeof(int), 1, fp);
+		 fprintf(fp,"%d",c[i]); 
 	}
 	fclose(fp);
 
@@ -163,7 +163,7 @@ void ReadFt(char *bin,char*fname1,char*fname2,int*a,int*b,long &size1,long &size
 	if(strcmp(bin,"-b")==NULL)
 	flag = "rb";
 	else
-		flag = "rt";
+		flag = "r";
 	FILE *fp1,*fp2;
 	fp1=fopen(fname1,flag);
 	if(fp1==NULL)
@@ -237,7 +237,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	{	
 		printf("\n\tSUM\n");
 		lent = Summ(a,b,lent);
-		printf("\nResults: ");
 		WriteFt(bin,b,lent,fname_out);
 		printf("\n\n");
 		system("pause");
