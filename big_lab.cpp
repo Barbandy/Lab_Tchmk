@@ -1,7 +1,24 @@
-﻿
+﻿/*Список необходимых функций.
+Работа с файлами:
+● Загрузка большого числа из файла в бинарном формате.
+● Загрузка большого числа из файла в текстовом десятичном формате.
+● Сохранение большого числа в файл в бинарном формате.
+● Сохранение большого числа в файл в текстовом десятичном формате.
+Арифметические операции:
+● Сложение двух больших чисел
+● Вычитание двух больших чисел
+● Умножение двух больших чисел
+● Деление двух больших чисел
+● Вычисление остатка от деления одного большого числа на другое
+● Возведение большого числа в степень большого числа.
+Для данных функция необходимо разработать консольный интерфейс:
+<название_программы> <файл_с_первым_большим_числом> <операция> <файл_со_вторым_большим_числом> <результирующий_файл> [­b] [файл_содержащий_большое_число_модуль]
+Если передан ключ ­b то, что работа идет с бинарными файлами (порядок бит little­endian).
+Если передан файл содержащий большое число модуль, то все операции вычисляются по модулю этого числа*/
 #include "stdafx.h"
 #include <stdio.h>
 #include <string.h>
+#include <malloc.h>
 #include "conio.h"
 #include <windows.h>
 #define _CRTDBG_MAP_ALLOC 
@@ -9,13 +26,14 @@
 #pragma warning(disable: 4996)
 
 
+
 //Функция узнает длины файлов 
 //----------------------------------------------------
 void Sizeoff(char* bin,char* fname1,char* fname2, long &size1,long &size2)
 {
-	 char *flag=0;
+	char *flag=0;
 	if(strcmp(bin,"-b")==NULL)
-	flag = "rb";
+		flag = "rb";
 	else
 		flag = "r";
 	FILE *fp1 = fopen(fname1, flag);
@@ -33,35 +51,99 @@ void Sizeoff(char* bin,char* fname1,char* fname2, long &size1,long &size2)
 	fclose(fp1);
 	fclose(fp2);
 }
-//Функция записи в txt 
+//Функции записи в txt 
 //----------------------------------------------------
-void WriteFt(char* bin,int* c,long &sizen, char *fname )
+void WriteFt(char* bin,int* c,long &sizen, char *fname,int reverse)
 {
-	 char *flag=0;
+	int i=0;
+
+	char *flag=0;
+	char sign=0;
 	if(strcmp(bin,"-b")==NULL)
-	flag = "wb";
+		flag = "wb";
 	else
 		flag = "w";
-	printf("Результат записан в файл %s.",fname);
 	FILE *fp = fopen(fname, flag);
 	if(NULL==fp)
 	{
 		printf("\nНе удалось открыть файл \n");
 		return;
 	}
-	for(int i=sizen; i>0; i--)
+	/*if(c[sizen]==-3||c[sizen]==-6)
 	{
-		 //fwrite(&c[i], sizeof(int), 1, fp);
-		 fprintf(fp,"%d",c[i]); 
+	sign='-';
+	putc(sign,fp);
+	sizen-=1;
+	}*/
+	if(reverse==1)
+	{
+		for(i=0; i<sizen; i++)
+		{
+			//fwrite(&c[i], sizeof(int), 1, fp);
+			fprintf(fp,"%d",c[i]); 
+		}
 	}
+	else
+	{
+		for(i=sizen; i>0; i--)
+		{
+			//fwrite(&c[i], sizeof(int), 1, fp);
+			fprintf(fp,"%d",c[i]); 
+		}
+	}
+
+
+	printf("Результат записан в файл %s.\n",fname);
 	fclose(fp);
 
 }
-//Функция умножения
+//----------------------------------------------------
+void WriteFtR(char* bin,int &R,long sizen, char *fname )
+{
+	char *flag=0;
+	char sign=0;
+	if(strcmp(bin,"-b")==NULL)
+		flag = "bw";
+	else
+		flag = "w";
+
+	FILE *fp = fopen(fname, flag);
+	if(NULL==fp)
+	{
+		printf("\nНе удалось открыть файл \n");
+		return;
+	}
+
+	fprintf(fp,"%d",R); 
+	printf("\nРезультат записан в файл %s.\n",fname);
+	fclose(fp);
+
+}
+//Функции умножения	 
+//----------------------------------------------------
+int SMul(int *a,int *b,int *c,long &size1,long &size2)
+{
+	int i=0;
+	long sizec=size1+size2;
+
+	for (i = 0; i<= size1; i++)
+		c[i ] += a[i] * b[size2];
+
+	for (i = 0; i < sizec; i++)
+	{
+		c[i + 1] +=  c[i] / 10;
+		c[i] %= 10;
+	}
+	for(i=sizec;i>=0;i--)	//избавляемся от лидирующих нулей
+		if(c[i]==0)
+			sizec--;
+		else break;
+		return sizec;
+}
 //----------------------------------------------------
 int Multiplication(int *a,int *b,int *c,long &size1,long &size2)
 {
-	int i,j;
+	int i=0,j=0;
 	long len_m;
 	len_m = size1+size2;
 	for (i = 0; i<= size1; i++)
@@ -80,45 +162,49 @@ int Multiplication(int *a,int *b,int *c,long &size1,long &size2)
 
 		return len_m;
 }
-//Сравним числа
+//Функции сравния
 //----------------------------------------------------
-int Compare(int *a,int *b,long &size1, long &size2, long &len_)
+// Больше
+bool bolshe(int * a, long size1, int * b, long size2)
 {
-	int k = 3; //  числа одинаковой длинны
-	len_ = size1;
-	if (size1 > size2)
-	{
-		len_ = size1;
-		k = 1; // первое число длиннее второго
-	}
-	else
-		if (size2 > size1)
-		{
-			len_ = size2;
-			k = 2; //  второе число длиннее первого
-		}
-		else // если числа одинаковой длинны, то необходимо сравнить их веса
-			for (int i = 0; i < len_;i++) // поразрядное сравнение весов чисел
-			{
-				if (a[i] > b[i]) // если разряд первого числа больше
-				{
-					k = 1; //  первое число длиннее второго
-					break; 
-				}
+	int i=0;
 
-				if(b[i] > a[i]) // если разряд второго числа больше
-				{
-					k = 2; //  второе число длиннее первого
-					break; 
-				}
-			} 
-			return k;
+	if (size1>size2)
+		return true;
+	else if (size2>size1) 
+		return false;
+	else
+		for (i=0; i<size1; i++)
+		{
+			if (a[i]>b[i]) 
+				return true;
+			else if (b[i]>a[i]) 
+				return false;
+		}
+
+		return false;
 }
-//Вычитание
-//----------------------------------------------------
-int Submit(int *a,int *b, int *c,long &len_)
+// Равно
+bool ravno(int * a, long size1, int * b, long size2)
 {
-	int i,loan=0,t=0;
+	int i=0;
+
+	if (size1!=size2) 
+		return false;
+	else
+		for (i=0; i<size1; i++)
+		{
+			if (a[i]!=b[i])
+				return false;
+		}
+
+		return true;
+}
+//Функция вычитания
+//----------------------------------------------------
+void Submit(int *a,int *b, int *c,long &len_)
+{
+	int i=0,loan=0,t=0;
 
 	for(i=0;i<=len_;i++)
 	{
@@ -132,15 +218,19 @@ int Submit(int *a,int *b, int *c,long &len_)
 		{
 			c[i]=10+t;	 
 			loan=1;	//ставим флаг, на следующем шаге вычтем
-		}            
+		}
 	}
-	return 0;
+	for(i=len_;i>=0;i--)	//избавляемся от лидирующих нулей
+		if(c[i]==0)
+			len_--;
+		else break;
+
 }
-// Сложение
+// Функция сложения
 //----------------------------------------------------
 int Summ(int *a, int *b, long lent)
 {
-	int i;
+	int i=0;
 	for ( i = 0; i < lent; i++)
 	{
 		b[i] += a[i]; // суммируем последние разряды чисел
@@ -156,12 +246,140 @@ int Summ(int *a, int *b, long lent)
 	}
 	return lent;
 }
-void ReadFt(char *bin,char*fname1,char*fname2,int*a,int*b,long &size1,long &size2)
+//Функции деления
+// Первое вычитаемое
+void ForDiv(int * a, long size1, int * b, long size2, int * l, long &nl)
 {
-	int i;
+	int i=0;
+
+	for (i=0; i<size2; i++) 
+		l[i] = a[i];
+	nl = size2;
+
+}
+// Дополняем нулями
+void Nol(int *ar, long &m, long n)
+{
+	int i=0,j=0;
+
+	for(i=0; i<n-m; i++)
+		for(j=n-1; j>0; j--)
+			ar[j]=ar[j-1];
+
+	for(i=0; i<n-m; i++)
+		ar[i]=0;
+
+	m=n;	
+}
+// Вычитание
+void Sub(int * a, long &n, int * b, long &m,int *c)
+{
+	int i=0,j=0,o=0;
+
+	//Дополняем нулями
+	if(n>m) Nol(b,m,n);
+	else if(n<m) Nol(a,n,m);
+	//Обнуляем резултат
+	for(i=0; i<n; i++)
+		c[i]=0;
+	//Вычитание
+	o=0;
+	for(j=n-1; j>=0; j--) 
+	{
+		c[j] += a[j] - b[j] + o;
+		o=0;
+		if(c[j]<0)
+		{
+			o=-1;
+			c[j]=10 + c[j];
+		}
+	}
+	//Избавляемся от ведущих нулей
+	while(c[0]==0) {
+		for(j=0; j<n-1; j++)
+			c[j]=c[j+1];
+		if(n!=1) n--; else break;
+	}
+	while(b[0]==0) {
+		for(j=0; j<m-1; j++)
+			b[j]=b[j+1];
+		if(m!=1) m--; else break;
+	}
+	//Вывод результата
+	for(i=0; i<n; i++)
+		a[i] = c[i];
+}
+//---------------------------------------------------
+void reverseMass(int *R, long size)
+{
+	int i = 0,j=0, temp=0;
+	int *k;
+	k=(int*)malloc((size)*sizeof(int));
+	for (i = size; i>0;i--)
+	{
+		k[j]=R[i];
+		j++;
+	}
+	for(i=0;i<size;i++)
+		R[i]=k[i];
+	free(k);
+}		   
+
+//Деление
+void Div(int *a,int *b,int *q,int *r,int *c,int *m,long &size1,long &size2)
+{
+	int i=0,j=0;
+	long nq=0,nm=0,nr=0,start=0;
+	reverseMass(a,size1);
+	reverseMass(b,size2);
+
+	ForDiv(a,size1,b,size2,r,nr);
+	for (i=0; i<size2; i++)
+		m[i] = b[i];
+	nm = size2;
+	start = nr;
+	if (!(ravno(r,nr,a,size1) && bolshe(b,size2,a,size1)))
+	{
+		for (i=0; bolshe(r,nr,m,nm) || ravno(r,nr,m,nm); i++){
+			Sub(r,nr,m,nm,c);
+		}
+		q[nq] = i;
+	}
+	nq++;
+
+	for (i=start; i<size1; i++)
+	{
+		r[nr] = a[i]; nr++;
+		for (j=0; bolshe(r,nr,m,nm) || ravno(r,nr,m,nm); j++){
+			Sub(r,nr,m,nm,c);
+		}
+
+		q[nq] = j; nq++;
+	}
+
+	size1=nq;
+	size2=nr;
+}
+//----------------------------------------------------
+void SDiv(int *a,int *b,int *q,int &R ,long &size1)
+{
+	int i=0,temp=0;
+
+	for(i=size1;i>0;i--)
+	{
+		temp = R*10 +a[i];
+		q[i] = temp/b[1];
+		R = temp -q[i]*b[1];
+	}
+
+}
+//Функция чтения
+void ReadFt(char *bin,char*fname1,char*fname2,int*a,int*b,long &size1,long &size2)
+{	
+	int i=0;
 	char *flag=0;
 	if(strcmp(bin,"-b")==NULL)
-	flag = "rb";
+		flag = "rb";
 	else
 		flag = "r";
 	FILE *fp1,*fp2;
@@ -179,11 +397,20 @@ void ReadFt(char *bin,char*fname1,char*fname2,int*a,int*b,long &size1,long &size
 	}
 	fseek(fp1, 0, SEEK_SET);
 	fseek(fp2, 0, SEEK_SET);
-	
+
+
 	for(i = size1; i>0; i--) {
 		//fread(&a[i], sizeof(int), 1, fp1);
 		//a[i] -=  48;
-		a[i] = fgetc(fp1) - 48;
+		a[i] = fgetc(fp1)- 48;
+	}
+
+	//Избавляемся от нулей перед числом
+	for( i=size1;i>=0;i--)
+	{	
+		if(a[i] == 0)	{
+			size1--;}
+		else break;
 	}
 	for(i = size2; i>0; i--) {
 		//fread(&b[i], sizeof(int), 1, fp2);
@@ -191,13 +418,25 @@ void ReadFt(char *bin,char*fname1,char*fname2,int*a,int*b,long &size1,long &size
 		b[i] = fgetc(fp2) - 48;
 	}
 
+	//Избавляемся от нулей перед числом
+	for( i=size2;i>=0;i--)
+	{
+		if(b[i] == 0 )	{
+			size2--;}
+		else break;
+	}
+
 	fclose(fp1);
 	fclose(fp2);
 	printf("\nДанные успешно считаны.");
 }
 //----------------------------------------------------
+
+//----------------------------------------------------
+
+
 int _tmain(int argc, _TCHAR* argv[])
-{
+{	
 	_CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
@@ -210,7 +449,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	long size1 =0,size2=0,lent=0,len_=0;
 	int i=0,*a,*b;
 	printf("Введите входные параметры:");
-	printf("\n<названи_программы> <файл_с_первым большим числом> <операция> <файл со вторымбольшим числом> <результирующий файл> [b]\n\n");
+	printf("\n<названи_программы> <файл_с_первым большим числом> <операция>\n<файл со вторым большим числом> <результирующий файл> [b]\n\n");
 	scanf("%s %s %s %s %s",fname_in1,act,fname_in2,fname_out,bin);
 
 	Sizeoff(bin,fname_in1,fname_in2,size1,size2);
@@ -237,7 +476,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	{	
 		printf("\n\tSUM\n");
 		lent = Summ(a,b,lent);
-		WriteFt(bin,b,lent,fname_out);
+		WriteFt(bin,b,lent,fname_out,0);
 		printf("\n\n");
 		system("pause");
 	}
@@ -251,10 +490,19 @@ int _tmain(int argc, _TCHAR* argv[])
 		int *c = (int*)malloc((lent+2)*sizeof(int));
 		for(i = 0; i <= lent; i++)
 			c[i] = 0;
-		k = Compare(a,b,size1,size2,len_);
-		if(k==1)  Submit(a,b,c,len_);	 //1>2
-		if(k==2)  Submit(b,a,c,len_);	 //2>1
-		WriteFt(bin,c,len_,fname_out);
+		if(bolshe(a,size1,b,size2))
+		{
+			len_=size1;
+			Submit(a,b,c,len_);	 
+		}
+		else 
+		{	len_=size2;
+		Submit(b,a,c,len_);
+		}
+		if(ravno(a,size1,b,size2))
+			len_=1;
+
+		WriteFt(bin,c,len_,fname_out,0);
 		free(c);
 		system("pause");
 	}
@@ -269,8 +517,60 @@ int _tmain(int argc, _TCHAR* argv[])
 		for(i=0;i<=len_m;i++)
 			c[i]=0;
 		len_m = Multiplication(a,b,c,size1,size2);
-		WriteFt(bin,c,len_m,fname_out);
+		WriteFt(bin,c,len_m,fname_out,0);
 		free(c);
+		system("pause");
+	}
+	//Деление
+	//----------------------------------------------------
+	else if(act[0] =='/' || act[0]=='%')	
+	{	
+
+		printf("\n\tDIV\n '/' and % \n");
+		int *c = (int*)malloc((lent+2)*sizeof(int)); //для подсчетов
+		int *q = (int*)malloc((lent+2)*sizeof(int)); //частное
+		int *r = (int*)malloc((lent+2)*sizeof(int)); //остаток
+		int *m = (int*)malloc((lent+2)*sizeof(int)); //вычетаемое
+		for(i = 0; i <= lent; i++)
+		{
+			q[i] = 0;
+			r[i] = 0;
+			m[i] = 0;
+			c[i] = 0;
+		}
+
+		int R=0 ,j=0;
+		if(size1<size2 ||b[size2]<0)
+		{
+			printf("\nНекорректные входные данные\n");
+			goto exit;
+		}
+		if(size2==1)
+		{
+			SDiv(a,b,q,R,size1);
+			if(act[0] =='/')
+				WriteFt(bin,q,size1,fname_out,0);
+			if(act[0]=='%')
+				WriteFtR(bin,R,1,fname_out);
+			goto exit;
+		}
+		Div(a,b,q,r,c,m,size1,size2);
+
+		if(act[0] =='/')
+			WriteFt(bin,q,size1,fname_out,1);
+		if(act[0]=='%')
+			WriteFt(bin,r,size2,fname_out,1);
+
+exit:	system("pause");
+		free(q);
+		free(r);
+		free(m);
+		free(c);
+	}
+
+	else if(act[0] =='^')
+	{
+
 		system("pause");
 	}
 
